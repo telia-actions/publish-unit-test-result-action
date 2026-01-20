@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 import json
 import logging
@@ -30,10 +32,10 @@ from publish.unittestresults import UnitTestCaseResults, UnitTestRunResults, Uni
 @dataclass(frozen=True)
 class Settings:
     token: str
-    actor: str
     api_url: str
     graphql_url: str
     api_retries: int
+    ssl_verify: bool | str
     event: dict
     event_file: Optional[str]
     event_name: str
@@ -739,7 +741,7 @@ class Publisher:
                   r'    pullRequest(number: ' + str(pull.number) + r') {'
                   f'      comments(last: 100{order}) {{'
                   r'        nodes {'
-                  r'          id, databaseId, author { login }, body, isMinimized'
+                  r'          id, databaseId, viewerDidAuthor, body, isMinimized'
                   r'        }'
                   r'      }'
                   r'    }'
@@ -757,7 +759,7 @@ class Publisher:
         comment_body_start = f'## {self._settings.comment_title}\n'
         comment_body_indicators = ['\nresults for commit ', '\nResults for commit ']
         return list([comment for comment in comments
-                     if get_json_path(comment, 'author.login') == self._settings.actor
+                     if get_json_path(comment, 'viewerDidAuthor') == True
                      and (is_minimized is None or comment.get('isMinimized') == is_minimized)
                      and comment.get('body', '').startswith(comment_body_start)
                      and any(indicator in comment.get('body', '') for indicator in comment_body_indicators)])
